@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Reactive Clock</title>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #0b0b0c;
+      overflow: hidden;
+      font-family: 'Orbitron', sans-serif;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .clock-container {
+      text-align: center;
+      letter-spacing: 5px;
+      z-index: 2;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-shadow: 0 0 10px rgba(255,255,255,0.3);
+      animation: fadeIn 2s ease-in-out;
+    }
+
+    .day {
+      font-size: 3.5em;
+      font-weight: 500;
+      margin-bottom: 0.2em;
+    }
+
+    .date {
+      font-size: 1.3em;
+      opacity: 0.7;
+      margin-bottom: 0.2em;
+    }
+
+    .time {
+      font-size: 2em;
+      opacity: 0.85;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translate(-50%, -60%); }
+      to { opacity: 1; transform: translate(-50%, -50%); }
+    }
+
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <canvas id="bg"></canvas>
+
+  <div class="clock-container">
+    <div class="day" id="day">MONDAY</div>
+    <div class="date" id="date">6 JAN 2024</div>
+    <div class="time" id="time">17:42</div>
+  </div>
+
+  <script>
+    // Update Time & Date
+    function updateClock() {
+      const now = new Date();
+      const day = now.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
+      const date = now.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase();
+      const time = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+      document.getElementById('day').textContent = day;
+      document.getElementById('date').textContent = date;
+      document.getElementById('time').textContent = time;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Particle Background
+    const canvas = document.getElementById('bg');
+    const ctx = canvas.getContext('2d');
+    let width, height, particles;
+
+    function resizeCanvas() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      createParticles();
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function createParticles() {
+      particles = [];
+      for (let i = 0; i < 150; i++) {
+        particles.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          r: Math.random() * 2 + 0.5,
+          vx: (Math.random() - 0.5) * 0.3,
+          vy: (Math.random() - 0.5) * 0.3
+        });
+      }
+    }
+
+    let mouse = { x: 0, y: 0 };
+
+    document.addEventListener('mousemove', e => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+    });
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, width, height);
+      for (let p of particles) {
+        let dx = mouse.x - p.x;
+        let dy = mouse.y - p.y;
+        let dist = Math.sqrt(dx * dx + dy * dy);
+        let angle = Math.atan2(dy, dx);
+
+        if (dist < 100) {
+          p.vx -= Math.cos(angle) * 0.05;
+          p.vy -= Math.sin(angle) * 0.05;
+        }
+
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // bounce
+        if (p.x < 0 || p.x > width) p.vx *= -1;
+        if (p.y < 0 || p.y > height) p.vy *= -1;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = 'white';
+        ctx.fill();
+      }
+      requestAnimationFrame(animateParticles);
+    }
+
+    animateParticles();
+  </script>
+</body>
+</html>
