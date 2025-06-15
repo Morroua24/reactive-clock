@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Galaxy Clock Reactive</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: radial-gradient(ellipse at center, #000015 0%, #000000 100%);
+      overflow: hidden;
+      font-family: 'Orbitron', sans-serif;
+      color: white;
+    }
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+    .clock, .calendar {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      text-shadow: 0 0 10px white;
+      z-index: 2;
+    }
+    .clock {
+      top: 45%;
+      font-size: 3em;
+    }
+    .calendar {
+      top: 53%;
+      font-size: 1.2em;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <div class="clock" id="clock">00:00</div>
+  <div class="calendar" id="calendar">Loading...</div>
+
+  <script>
+    const clock = document.getElementById('clock');
+    const calendar = document.getElementById('calendar');
+
+    function updateTime() {
+      const now = new Date();
+      const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const day = now.toLocaleDateString('en-US', { weekday: 'long' });
+      clock.textContent = time;
+      calendar.textContent = day;
+    }
+    setInterval(updateTime, 1000);
+    updateTime();
+
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+    let stars = [], mouseX = width / 2, mouseY = height / 2;
+    let mouseMode = 0;
+
+    for (let i = 0; i < 200; i++) {
+      const x = Math.random() * width;
+      const y = Math.random() * height;
+      stars.push({
+        x,
+        y,
+        homeX: x,
+        homeY: y,
+        r: Math.random() * 1.5 + 0.5,
+        angle: Math.random() * Math.PI * 2,
+        speed: Math.random() * 0.5 + 0.1,
+        drift: Math.random() * 0.5 + 0.1
+      });
+    }
+
+    document.addEventListener("mousemove", e => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+    });
+
+    document.addEventListener("mousedown", e => {
+      if (e.button === 0) mouseMode = 1;
+      if (e.button === 2) mouseMode = 2;
+    });
+    document.addEventListener("mouseup", () => mouseMode = 0);
+    document.addEventListener("contextmenu", e => e.preventDefault());
+
+    function animate() {
+      ctx.clearRect(0, 0, width, height);
+      for (let star of stars) {
+        let dx = mouseX - star.x;
+        let dy = mouseY - star.y;
+        let dist = Math.sqrt(dx * dx + dy * dy);
+        let angle = Math.atan2(dy, dx);
+        let force = Math.min(150 / (dist || 1), 2);
+
+        if (mouseMode === 2) {
+          star.x += Math.cos(angle) * force * star.speed * 2;
+          star.y += Math.sin(angle) * force * star.speed * 2;
+        } else if (mouseMode === 1) {
+          star.x -= Math.cos(angle) * force * star.speed * 2;
+          star.y -= Math.sin(angle) * force * star.speed * 2;
+        } else {
+          let homeDx = star.homeX - star.x;
+          let homeDy = star.homeY - star.y;
+          star.x += homeDx * 0.003;
+          star.y += homeDy * 0.003;
+          star.x += Math.cos(star.angle) * star.drift * 0.3;
+          star.y += Math.sin(star.angle) * star.drift * 0.3;
+          star.angle += 0.01;
+        }
+
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
+        ctx.fillStyle = "white";
+        ctx.fill();
+      }
+      requestAnimationFrame(animate);
+    }
+    animate();
+
+    window.addEventListener("resize", () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    });
+  </script>
+</body>
+</html>
